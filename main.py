@@ -3,12 +3,14 @@ from tkinter import *
 import tkinter as tk
 from tkinter import filedialog
 import tkinter.messagebox
-from turtle import color
-import webbrowser
 
 class Myapp():
 	def __init__(self):
+		self.Estado_Archivo = False
+		self.archivo = None
 		self.texto = ''
+		self.nombre = 'NombreArchivo'
+		self.extension = 'Extension'
 		# Creando ventana principal
 		ventana = tk.Tk()
 		ventana.title("Ventana principal")
@@ -30,23 +32,23 @@ class Myapp():
 		posicion_y = (alto_pantalla // 2) - (alto_ventana // 2)
 		ventana.geometry("+{}+{}".format(posicion_x, posicion_y))
 		
-  		# Creado menu desplegable
-		
-		menu = Menu(ventana)
-		ventana.config(menu = menu)
+  		# Creando la barra de menu
+		menus = Menu(ventana)
+		ventana.config(menu = menus)
 		ventana.resizable(True, True)
 		
   		# Objetos de la ventana principal
 		# nombre del archivo con su respectiva extension en un label
-		LabelEditor = Label(ventana,text="Name.extension")
-		LabelEditor.grid(row=1, column=1,sticky="w",padx=10,pady=10)
+		self.LabelEditor = Label(ventana,text=""+self.nombre+"."+self.extension+"")
+		self.LabelEditor.grid(row=1, column=1,sticky="w",padx=10,pady=10)
 		# Cuadro de edicion y muestra de archivo cargado a memoria
 		self.CuadroEditor = tk.Text(ventana, width=60, height=20)
 		self.CuadroEditor.grid(row=2, column=1,sticky="w",padx=10,pady=10)
 
 		# Menu Archivo
-		Archivo = Menu(menu, tearoff=0)
-		Archivo.add_command(label="Nuevo", command=self.Nuevo)
+		Archivo = Menu(menus, tearoff=0)
+		menus.add_cascade(label="Archivo", menu=Archivo, font=("green",10))		
+		Archivo.add_command(label="Nuevo", command=self.preguntar_guardar)
 		Archivo.add_command(label="Abrir", command=self.Abrir)
 		Archivo.add_command(label="Guardar", command=self.Guardar)
 		Archivo.add_command(label="Guardar Como", command=self.GuardarComo)
@@ -54,77 +56,81 @@ class Myapp():
 		Archivo.add_command(label="Salir", command=ventana.destroy)
 		
 		# Menu Analizar
-		Analizar = Menu(menu, tearoff=0)
-		Analizar.add_command(label="Analizar", command=self.Analizar)
-  
+		menus.add_command(label="Analizar", command=self.Analizar, font=("green",10))
 		# Menu Tokens
-		Tokens = Menu(menu, tearoff=0)
-		Tokens.add_command(label="Tokens", command=self.Tokens)
+		menus.add_command(label="Tokens", command=self.Tokens, font=("green",10))
   
 		# Menu Errores
-		Errores = Menu(menu, tearoff=0)
-		Errores.add_command(label="Tokens", command=self.Errores)
-  
-		menu.add_cascade(label="Archivo", menu=Archivo)
-		menu.add_cascade(label="Analizar", menu=Analizar)
-		menu.add_cascade(label="Tokens", menu=Tokens)
-		menu.add_cascade(label="Errores", menu=Errores)
+		menus.add_command(label="Errores", command=self.Errores, font=("green",10))
   
 		ventana.mainloop()
 	# Creacion de un nuevo archivo
-	def Nuevo(self):
-		pass
-	
-  	# Lectura del archivo
-	def Abrir(self):  
-		file = filedialog.askopenfilename(defaultextension=".json",
-		filetypes=[("Archivos de texto", "*.json")])
+	def limpiar_editor(self):
+		self.CuadroEditor.delete("1.0", "end")
+	def preguntar_guardar(self):
 
-		if file:
-			with open(file, 'r') as archivo:
-				# 2. Leer el contenido del archivo
-				lineas = archivo.readlines()
-				# 3. Cerrar el archivo
-				archivo.close()
-				self.CuadroEditor.delete(1.0, tk.END)
-				for linea in lineas:
-					self.CuadroEditor.insert(tk.END,linea)
-					self.texto = self.texto + linea
-				tkinter.messagebox.showinfo(title="Cargando archivo", message=("El archivo se cargo correctamente a memoria"))
+		if tkinter.messagebox.askyesno("Guardar cambios", "¿Desea guardar los cambios antes de limpiar el editor?"):
+			archivo = tk.filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Archivos de texto", "*.txt"), ("Todos los archivos", "*.*")])
+			if archivo:
+				with open(archivo, "w") as f:
+					f.write(self.CuadroEditor.get("1.0", "end-1c"))
+				self.limpiar_editor()
+				self.archivo = None
+				self.Estado_Archivo = False
 		else:
-			tkinter.messagebox.showinfo(title="Cargando archivo", message=("No seleccionaste ningun archivo"))  
-			
+			self.limpiar_editor()
+			self.archivo = None
+			self.Estado_Archivo = False
 	
+	# Lectura del archivo
+	def Abrir(self):  
+		self.archivo = filedialog.askopenfilename()
+		if self.archivo:
+			self.LabelEditor.tk_focusNext = "hola"
+			self.nombre_archivo = os.path.basename(self.archivo)
+			self.nombre, self.extension = os.path.splitext(self.nombre_archivo)
+			# print("Nombre del archivo: ", nombre)
+			# print("Extension del archivo: ", extension)
+
+			with open(self.archivo, 'r') as f:
+				contenido = f.read()
+				self.CuadroEditor.delete('1.0', 'end')
+				self.CuadroEditor.insert('1.0', contenido)
+			self.Estado_Archivo = True
+		else:
+			self.Estado_Archivo = False
 	# Guardar archivo
 	def Guardar(self):
-		archivo = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("Archivos de texto", "*.json")])
-		if archivo:
-			with open(archivo, 'w') as f:
-				text = self.CuadroEditor.get('1.0', tk.END)
-				f.write(text)
+		if self.Estado_Archivo:
+			with open(self.archivo, 'w') as f:
+				contenido = self.CuadroEditor.get('1.0', 'end')
+				f.write(contenido)
+			tkinter.messagebox.showinfo("Guardar", "El archivo fue guardado correctamente")
+		elif self.Estado_Archivo == False:
+			self.archivo = filedialog.asksaveasfilename(defaultextension=".txt")
+			if self.archivo:
+				with open(self.archivo, 'w') as f:
+					contenido = self.CuadroEditor.get('1.0', 'end')
+					f.write(contenido)
+				self.Estado_Archivo = True
+			
 	# Guardar un archivo Como
 	def GuardarComo(self):
-		pass
-
+		self.archivo = filedialog.asksaveasfilename(defaultextension=".txt")
+		if self.archivo:
+			with open(self.archivo, 'w') as f:
+				contenido = self.CuadroEditor.get('1.0', 'end')
+				f.write(contenido)
+			self.Estado_Archivo = True
 	# Analizar el archivo de entrada
 	def Analizar(self):
-		if self.texto:
-			self.texto = self.texto.strip("{}")
-			self.analizar = Analizador(self.texto)
-			self.analizar._compile()
-			tkinter.messagebox.showinfo(title="Analizando el Texto", message=("El texto fue analizado correctamente"))	
-		else:
-			tkinter.messagebox.showinfo(title="Analizando el Texto", message=("No existe texto para analizar"))	
-      
+		print("Funcion Analizar")
     # Tokens de entrada
 	def Tokens(self):
-		pass
-
+		print("Funcion Tokens")
 	# Errores del ultimo archivo
 	def Errores(self):
-		self.analizar.GuardarErrores()
-		self.texto = ''
-	
+		print("Funcion Errores")
 # Llamada de la aplicacion
 if __name__ == "__main__":
     Myapp()
