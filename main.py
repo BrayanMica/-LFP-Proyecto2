@@ -41,9 +41,20 @@ class Myapp():
 		# nombre del archivo con su respectiva extension en un label
 		self.LabelEditor = Label(ventana,text=""+self.nombre+"."+self.extension+"")
 		self.LabelEditor.grid(row=1, column=1,sticky="w",padx=10,pady=10)
-		# Cuadro de edicion y muestra de archivo cargado a memoria
+		self.LabelPosicion = Label(ventana,text="", bg="black", fg="yellow")
+		self.LabelPosicion.grid(row=3, column=1,sticky="w",padx=10,pady=10)
+		# Creando evento de posixionamiento del cursor x,y
+		def actualizar_posicion(event):
+			pos_actual = self.CuadroEditor.index(tk.INSERT)
+			linea, columna = pos_actual.split('.')
+			self.LabelPosicion.config(text=f"Posición del cursor: lín. {linea}, col. {columna}")
+
+  		# Cuadro de edicion y muestra de archivo cargado a memoria
 		self.CuadroEditor = tk.Text(ventana, width=60, height=20)
 		self.CuadroEditor.grid(row=2, column=1,sticky="w",padx=10,pady=10)
+
+		# vincular el evento de clic con la función actualizar_posicion_cursor
+		self.CuadroEditor.bind("<KeyRelease>", actualizar_posicion)
 
 		# Menu Archivo
 		Archivo = Menu(menus, tearoff=0)
@@ -62,7 +73,6 @@ class Myapp():
   
 		# Menu Errores
 		menus.add_command(label="Errores", command=self.Errores, font=("green",10))
-  
 		ventana.mainloop()
 	# Creacion de un nuevo archivo
 	def limpiar_editor(self):

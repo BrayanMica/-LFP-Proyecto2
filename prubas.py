@@ -1,56 +1,41 @@
 import tkinter as tk
-from tkinter import filedialog
-import os
+from tkinter import Label
 
-class Editor(tk.Frame):
-    def __init__(self, master=None):
-        super().__init__(master)
-        self.master = master
-        self.master.title("Editor de código")
-        self.grid()
+class VentanaEditor:
+    def __init__(self, ventana, nombre_archivo, extension):
+        self.nombre = nombre_archivo
+        self.extension = extension
+        
+        # crear el cuadro de texto
+        self.CuadroEditor = tk.Text(ventana, width=60, height=20)
+        self.CuadroEditor.grid(row=2, column=1, sticky="w", padx=10, pady=10) 
+        
+        # vincular el evento de clic con la función actualizar_posicion_cursor
+        self.CuadroEditor.bind("<Button-1>", self.actualizar_posicion_cursor)
+        
+        # crear el LabelEditor
+        self.LabelEditor = Label(ventana, text="{}{}".format(self.nombre, self.extension))
+        self.LabelEditor.grid(row=1, column=1, sticky="w", padx=10, pady=10)
+        
+        # crear el LabelEditorPosicion
+        self.LabelEditorPosicion = tk.Label(ventana, text="")
+        self.LabelEditorPosicion.grid(row=3, column=1, sticky="w", padx=10, pady=10)
 
-        self.crear_widgets()
+    def actualizar_posicion_cursor(self, event):
+        # obtener la ubicación x e y del cursor
+        pos_x = self.CuadroEditor.winfo_pointerx() - self.CuadroEditor.winfo_rootx()
+        pos_y = self.CuadroEditor.winfo_pointery() - self.CuadroEditor.winfo_rooty()
+        
+        # obtener la posición actual del cursor dentro del widget de texto
+        pos = self.CuadroEditor.index("@{}h,{}c".format(pos_y, pos_x))
+        
+        # actualizar el texto del LabelEditorPosicion
+        self.LabelEditorPosicion.config(text="Posición del cursor: " + pos)
 
-        self.archivo_abierto = None
+        # actualizar el texto del LabelEditor con la nueva información
+        self.LabelEditor.config(text="{}{}    {}".format(self.nombre, self.extension, pos))
 
-    def crear_widgets(self):
-        self.editor = tk.Text(self)
-        self.editor.grid(row=0, column=0, sticky="nsew")
-
-        boton_guardar = tk.Button(self, text="Guardar", command=self.guardar_archivo)
-        boton_guardar.grid(row=1, column=0, sticky="e")
-
-    def guardar_archivo(self):
-        if self.archivo_abierto:
-            archivo = self.archivo_abierto
-        else:
-            archivo = filedialog.asksaveasfilename(defaultextension=".txt")
-
-        if archivo:
-            with open(archivo, 'w') as f:
-                contenido = self.editor.get('1.0', 'end')
-                f.write(contenido)
-
-            self.archivo_abierto = archivo
-            print("Archivo guardado:", archivo)
-
-    def abrir_archivo(self):
-        archivo = filedialog.askopenfilename()
-        if archivo:
-            nombre_archivo = os.path.basename(archivo)
-            nombre, extension = os.path.splitext(nombre_archivo)
-            print("Nombre del archivo:", nombre)
-            print("Extensión del archivo:", extension)
-
-            with open(archivo, 'r') as f:
-                contenido = f.read()
-                self.editor.delete('1.0', 'end') # Limpiar el editor
-                self.editor.insert('1.0', contenido)
-
-            self.archivo_abierto = archivo
-            print("Archivo abierto:", archivo)
-    
-
-root = tk.Tk()
-editor = Editor(root)
-editor.mainloop()
+if __name__ == "__main__":
+    ventana_principal = tk.Tk()
+    editor = VentanaEditor(ventana_principal, "archivo", ".txt")
+    ventana_principal.mainloop()
