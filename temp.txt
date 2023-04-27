@@ -1,0 +1,29 @@
+CrearBD temp1 = nueva CrearBD();
+--- use('temp1');
+
+EliminarBD temp1 = nueva EliminarBD();
+--- db.dropDatabase();
+
+CrearColeccion colec = nueva CrearColeccion('literaturas');
+--- db.createCollection('literaturas')
+
+
+S0 -> Funcion S1
+S1 -> ID S2
+S2 -> = S3
+S3 -> nueva S4
+S4 -> Funcion S5
+S5 -> ( S6
+S6 -> atributo S7
+    | ) S8
+S7 -> ) S8
+S8 -> ; S0
+    | ;
+
+
+/*
+Comentario de
+varias líneas
+*/
+
+"HOLA MUND"

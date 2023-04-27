@@ -1,0 +1,6 @@
+--- hola
+/* 
+	ARCHIVO DE PRUEBAS 
+	CON COMENTARIOS
+*/
+CrearBD "temp" = nueva CrearBD();
