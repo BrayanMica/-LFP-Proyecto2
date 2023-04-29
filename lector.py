@@ -5,20 +5,21 @@ import os
 ruta_absoluta = os.getcwd()
 archivo = open(str(ruta_absoluta)+'/entrada.txt', 'r')
 lineas = ''
-print(archivo)
+#print(archivo)
 for i in archivo.readlines():
     lineas += i
 
-print(lineas)
+#print(lineas)
 
 
 class Analizador:
     def __init__(self, entrada:str):
-        self.lineas = entrada #ENTRADA
+        self.lineas = entrada #ENTRADA DEL ARCHIVO CARGADO EN MEMORIA
         self.index = 0 #POSICION DE CARACTERES EN LA ENTRADA
-        self.fila = 0 #FILA ACTUAL
-        self.columna = 0 #COLUMNA ACTUAL
+        self.fila = 1 #FILA ACTUAL
+        self.columna = 1 #COLUMNA ACTUAL
         self.ListaErrores = [] # LISTA PARA GUARDAR ERRORES
+        self.E7oE8 = "" # Seleccion de los estados 7 y 8
 
     def _token(self, token:str, estado_actual:str, estado_sig:str):
         if self.lineas[self.index] != " ":
@@ -38,6 +39,7 @@ class Analizador:
             tmp = ''
             for i in range(_index, _index + _count):
                 tmp += self.lineas[i]
+            self.E7oE8 = tmp
             return tmp
         except:
             return None
@@ -55,7 +57,7 @@ class Analizador:
                     #print('ERROR1')
                     return False
                 
-            print(f'********** ENCONTRE - {tokem_tmp} ***************')
+            print(f'++++++ ENCONTRE - {tokem_tmp} ++++++++')
             return True
         except:
             #print('ERROR2')
@@ -70,15 +72,16 @@ class Analizador:
             # IDENTIFICAR SALTO DE LINEA
             if self.lineas[tmp] == '\n':
                 return 'ERROR'
-            elif self.lineas[tmp] == '"'and estado_aux == '': 
-                print("INICIO")
+            elif self.lineas[tmp] == ' ' and estado_aux == '': 
+                #print("INICIO")
                 estado_aux = "INICIO"
-            elif self.lineas[tmp] == '"' and estado_aux == 'INICIO':
-                print("fin")
+            elif self.lineas[tmp] == ' ' and estado_aux == 'INICIO':
+                #print("fin")
                 return [cadena, tmp]
             elif estado_aux == 'INICIO':
                 cadena += self.lineas[tmp]
-                print(f'CADENA - {self.lineas[tmp] } ')
+                #print(self.lineas[1])
+                #print(f'CADENA - {self.lineas[tmp] } ')
 
             
     
@@ -93,12 +96,12 @@ class Analizador:
     def _compile(self):
         estado_actual = 'S0'
         while self.lineas[self.index] != "":
-            print(f'CARACTER - {self.lineas[self.index] } | ESTADO - {estado_actual} | FILA - {self.fila}  | COLUMNA - {self.columna}')
+            #print(f'CARACTER - {self.lineas[self.index] } | ESTADO - {estado_actual} | FILA - {self.fila}  | COLUMNA - {self.columna}')
             
             # IDENTIFICAR SALTO DE LINEA
             if self.lineas[self.index] == '\n':
                 self.fila += 1
-                self.columna = 0
+                self.columna = 1
 
             # ************************
             #         ESTADOS
@@ -107,12 +110,14 @@ class Analizador:
             # S0 -> Funcion S1
             elif estado_actual == 'S0':
                 _com = self._token('---', 'S0', 'COMENTARIO')
-                _comC = self._token('/*','S0', 'COMENTARIO')
+                _comC = self._token("/*",'S0', 'COMENTARIO')
                 if _com == 'COMENTARIO':
                     self._comentarioSimple()
+                    estado_actual == 'S0'
                     print("######### ComentarioSimple #########")
-                elif _comC =='COMENTARIO':
+                elif _comC == 'COMENTARIO':
                     self._comentariosDeBloque()
+                    estado_actual == 'S0'
                     print("######### ComentarioDeBloque #########")
                 else:
                     funciones = ['CrearBD','EliminarBD','CrearColeccion','EliminarColeccion','InsertarUnico','ActualizarUnico','EliminarUnico','BuscarTodo','BuscarUnico']
@@ -126,10 +131,72 @@ class Analizador:
                 result = self._analizarCadena()
                 print(result)
                 self.index = result[1]
-                print(self.index)
                 estado_actual = 'S2'
                 
-
+            # S2 -> = S3
+            elif estado_actual == 'S2':
+                funciones = ['=']
+                for i in funciones:
+                    estado_actual = self._token(i, 'S2', 'S3')
+                    if estado_actual != 'ERROR':
+                        break
+            
+            # S3 -> nueva S4
+            elif estado_actual == 'S3':
+                funciones = ['nueva']
+                for i in funciones:
+                    estado_actual = self._token(i, 'S3', 'S4')
+                    if estado_actual != 'ERROR':
+                        break
+                    
+            # S4 -> nueva S5
+            elif estado_actual == 'S4':
+                funciones = ['CrearBD','EliminarBD','CrearColeccion','EliminarColeccion','InsertarUnico','ActualizarUnico','EliminarUnico','BuscarTodo','BuscarUnico']
+                for i in funciones:
+                    estado_actual = self._token(i, 'S4', 'S5')
+                    if estado_actual != 'ERROR':
+                        break
+            
+            # S5 -> nueva S6
+            elif estado_actual == 'S5':
+                funciones = ['(']
+                for i in funciones:
+                    estado_actual = self._token(i, 'S5', 'S6')
+                    if estado_actual != 'ERROR':
+                        break
+            
+            # S6 -> atributo S7 | ) S8
+            elif estado_actual == 'S6':
+                aux_siguiente = 'S7oS8'
+                funciones = ['atributo',')']
+                for i in funciones:
+                    estado_actual = self._token(i, 'S6', aux_siguiente)
+                    if self.E7oE8 == 'atributo':
+                        estado_actual = 'S7'
+                        break
+                    elif self.E7oE8 == ')':
+                        estado_actual = 'S8'
+                        break
+                    
+                    if estado_actual != 'ERROR':
+                        break
+                        
+            # S7 -> nueva S8
+            elif estado_actual == 'S7':
+                funciones = [')']
+                for i in funciones:
+                    estado_actual = self._token(i, 'S7', 'S8')
+                    if estado_actual != 'ERROR':
+                        break
+            
+            # S8 -> nueva S0
+            elif estado_actual == 'S8':
+                funciones = [';']
+                for i in funciones:
+                    estado_actual = self._token(i, 'S8', 'S0')
+                    estado_actual = 'S0'
+                    if estado_actual != 'ERROR':
+                        break
 
             # ************************
             # ************************
@@ -168,7 +235,7 @@ class Analizador:
         estado_actual = 'S0'
         while self.lineas[self.index] != "":
             # IDENTIFICAR SALTO DE LINEA
-            if self.lineas[self.index] == '*/':
+            if self.lineas[self.index] == '*' and self.lineas[self.index+1] == '/':
                 return
             
             # ERRORES 

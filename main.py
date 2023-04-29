@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import filedialog
 import tkinter.messagebox
 
+# Frontend de Aplicacion
 class Myapp():
 	def __init__(self):
 		self.Estado_Archivo = False
@@ -134,7 +135,7 @@ class Myapp():
 			self.Estado_Archivo = True
 	# Analizar el archivo de entrada
 	def Analizar(self):
-		print("Funcion Analizar")
+		print("Funcion Analizar")	
     # Tokens de entrada
 	def Tokens(self):
 		print("Funcion Tokens")
