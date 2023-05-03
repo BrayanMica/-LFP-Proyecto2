@@ -3,15 +3,18 @@ from tkinter import *
 import tkinter as tk
 from tkinter import filedialog
 import tkinter.messagebox
+from Analizador import Analizador
 
 # Frontend de Aplicacion
 class Myapp():
 	def __init__(self):
+		self.analizar = Analizador('')
 		self.Estado_Archivo = False
 		self.archivo = None
 		self.texto = ''
 		self.nombre = 'NombreArchivo'
 		self.extension = 'Extension'
+		
 		# Creando ventana principal
 		ventana = tk.Tk()
 		ventana.title("Ventana principal")
@@ -40,8 +43,10 @@ class Myapp():
 		
   		# Objetos de la ventana principal
 		# nombre del archivo con su respectiva extension en un label
-		self.LabelEditor = Label(ventana,text=""+self.nombre+"."+self.extension+"")
+		self.LabelEditor = Label(ventana,text="Edicion")
 		self.LabelEditor.grid(row=1, column=1,sticky="w",padx=10,pady=10)
+		self.LabelDatos = Label(ventana,text="Datos")
+		self.LabelDatos.grid(row=1, column=2,sticky="w",padx=10,pady=10)
 		self.LabelPosicion = Label(ventana,text="", bg="black", fg="yellow")
 		self.LabelPosicion.grid(row=3, column=1,sticky="w",padx=10,pady=10)
 		# Creando evento de posixionamiento del cursor x,y
@@ -51,8 +56,10 @@ class Myapp():
 			self.LabelPosicion.config(text=f"Posición del cursor: lín. {linea}, col. {columna}")
 
   		# Cuadro de edicion y muestra de archivo cargado a memoria
-		self.CuadroEditor = tk.Text(ventana, width=60, height=20)
+		self.CuadroEditor = tk.Text(ventana, width=40, height=20)
 		self.CuadroEditor.grid(row=2, column=1,sticky="w",padx=10,pady=10)
+		self.CuadroTokens = tk.Text(ventana, width=40, height=20)
+		self.CuadroTokens.grid(row=2, column=2,sticky="w",padx=10,pady=10)
 
 		# vincular el evento de clic con la función actualizar_posicion_cursor
 		self.CuadroEditor.bind("<KeyRelease>", actualizar_posicion)
@@ -78,6 +85,8 @@ class Myapp():
 	# Creacion de un nuevo archivo
 	def limpiar_editor(self):
 		self.CuadroEditor.delete("1.0", "end")
+		self.CuadroTokens.delete('1.0', 'end')
+		self.analizar.Limpiar_ListaTokens
 	def preguntar_guardar(self):
 
 		if tkinter.messagebox.askyesno("Guardar cambios", "¿Desea guardar los cambios antes de limpiar el editor?"):
@@ -92,12 +101,13 @@ class Myapp():
 			self.limpiar_editor()
 			self.archivo = None
 			self.Estado_Archivo = False
-	
 	# Lectura del archivo
 	def Abrir(self):  
 		self.archivo = filedialog.askopenfilename()
 		if self.archivo:
-			self.LabelEditor.tk_focusNext = "hola"
+			self.analizar.Limpiar_ListaTokens()
+			self.CuadroTokens.delete('1.0', 'end')
+			self.LabelEditor.tk_focusNext = "Archivo"
 			self.nombre_archivo = os.path.basename(self.archivo)
 			self.nombre, self.extension = os.path.splitext(self.nombre_archivo)
 			# print("Nombre del archivo: ", nombre)
@@ -123,8 +133,7 @@ class Myapp():
 				with open(self.archivo, 'w') as f:
 					contenido = self.CuadroEditor.get('1.0', 'end')
 					f.write(contenido)
-				self.Estado_Archivo = True
-			
+				self.Estado_Archivo = True	
 	# Guardar un archivo Como
 	def GuardarComo(self):
 		self.archivo = filedialog.asksaveasfilename(defaultextension=".txt")
@@ -135,10 +144,35 @@ class Myapp():
 			self.Estado_Archivo = True
 	# Analizar el archivo de entrada
 	def Analizar(self):
-		print("Funcion Analizar")	
+		print("Funcion Analizar")
+		texto = self.CuadroEditor.get("1.0", "end-1c")
+		if texto:
+			#print(f"El texto es: {texto}")
+			os.system("clear")
+			self.analizar = Analizador(texto)
+			self.analizar._compile()
+			tkinter.messagebox.showinfo("Analisis de datos","Datos analizados")
+		else:
+			tkinter.messagebox.showinfo("Analisis de datos","No hay datos en el cuadro\nde texto para analizar")	
     # Tokens de entrada
 	def Tokens(self):
-		print("Funcion Tokens")
+		Lista_aux = []
+		if self.analizar:
+			print("Funcion Tokens")
+			self.CuadroTokens.delete('1.0', 'end')
+			self.CuadroTokens.insert('1.0', '--------- Lista de Tokens -----------')
+			Lista_aux = self.analizar.get_ListaTokens()
+			fila=1
+			for valor in Lista_aux:
+				self.CuadroTokens.insert(''+str(fila+1)+'.0', '\n')
+				self.CuadroTokens.insert(''+str(fila+1)+'.0', 'Token -> '+valor)
+				fila = fila +1
+		else:
+			tkinter.messagebox.showinfo("Analisis Tokens","No existe datos\nPara")
+		
+		for i in Lista_aux:
+			print(i)
+		
 	# Errores del ultimo archivo
 	def Errores(self):
 		print("Funcion Errores")
